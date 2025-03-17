@@ -18,7 +18,7 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 	endif()
 endif()
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.14)
 
 
 #-----------------------------------------------------------------------------
@@ -48,6 +48,7 @@ SET(CMAKE_DEBUG_POSTFIX ""  CACHE STRING "Add this string to as suffix to Debug 
 #-----------------------------------------------------------------------------
 # Macro's
 
+# TODO 
 macro(opencollada_add_lib
 	name
 	sources
@@ -73,9 +74,31 @@ macro(opencollada_add_lib
 		endforeach()
 		set(CMAKE_REQUIRED_LIBRARIES "${name}_static;${CMAKE_REQUIRED_LIBRARIES}" PARENT_SCOPE)
 
+		if (APPLE_FRAMEWORK)
+			set_target_properties(${name}_static PROPERTIES
+				FRAMEWORK TRUE
+				FRAMEWORK_VERSION ${OPENCOLLADA_VERSION}
+				PRODUCT_BUNDLE_IDENTIFIER "github.com/KhronosGroup/OpenCOLLADA/${name}"
+				XCODE_ATTRIBUTE_INSTALL_PATH "@rpath"
+				PUBLIC_HEADER "${sources}"
+				# OUTPUT_NAME "${name}"
+				XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+				XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+				XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+				MACOSX_FRAMEWORK_IDENTIFIER "github.com/KhronosGroup/OpenCOLLADA/${name}"
+				MACOSX_FRAMEWORK_BUNDLE_VERSION ${OPENCOLLADA_VERSION}
+				MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${OPENCOLLADA_SHORT_VERSION}
+				MACOSX_RPATH TRUE
+				# RESOURCE "${sources}"
+			)
+		endif ()
+
 		install(
 			TARGETS ${name}_static EXPORT LibraryExport
 			ARCHIVE DESTINATION ${OPENCOLLADA_INST_LIBRARY}
+			FRAMEWORK DESTINATION ${CMAKE_BINARY_DIR} # CMAKE_INSTALL_LIBDIR
+			INCLUDES DESTINATION ${OPENCOLLADA_INST_INCLUDE}
+			PUBLIC_HEADER DESTINATION ${OPENCOLLADA_INST_INCLUDE}
 		)
 	endif ()
 
@@ -157,6 +180,7 @@ set(OPENCOLLADA_VERSION_MAJOR 0)
 set(OPENCOLLADA_VERSION_MINOR 1)
 set(OPENCOLLADA_VERSION_PATCH 0)
 set(OPENCOLLADA_VERSION ${OPENCOLLADA_VERSION_MAJOR}.${OPENCOLLADA_VERSION_MINOR}.${OPENCOLLADA_VERSION_PATCH})
+set(OPENCOLLADA_SHORT_VERSION ${OPENCOLLADA_VERSION_MAJOR}.${OPENCOLLADA_VERSION_MINOR})
 
 
 #-----------------------------------------------------------------------------
@@ -210,6 +234,10 @@ option(USE_SHARED "Build shared libraries"  OFF)
 option(USE_LIBXML "Use LibXml2 parser"      ON)
 option(USE_EXPAT  "Use expat parser"        OFF)
 option(USE_STATIC_MSVC_RUNTIME "Use static version of the MSVC run-time library" OFF)
+
+if (APPLE)
+	option(APPLE_FRAMEWORK "Build as Apple Framework" OFF)
+endif ()
 
 #adding xml2
 if (USE_LIBXML)
