@@ -20,7 +20,7 @@ namespace opencollada
 {
 	XmlDoc::XmlDoc(XmlDoc && other)
 	{
-		*this = move(other);
+		*this = std::move(other);
 	}
 
 	XmlDoc::~XmlDoc()
